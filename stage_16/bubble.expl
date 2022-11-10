@@ -1,0 +1,26 @@
+decl
+    int a[100];
+enddecl
+int main()
+{
+decl
+    int length, counter, temp, input;
+enddecl
+begin
+	temp = exposcall("Read", -1 , length);
+	counter = 0;
+	while(counter<length)do
+		temp = exposcall("Read" ,-1 , input);
+		a[counter] = input;
+		counter = counter + 1;
+    endwhile;
+    counter = 0;
+	while(counter<length)do
+		input = a[counter];
+		temp = exposcall("Write" ,-2 , input);
+		counter = counter + 1;
+    endwhile;
+    return 0;
+    end
+}
+

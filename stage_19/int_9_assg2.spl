@@ -1,0 +1,109 @@
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 9;
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13] = SP;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11] * 512 - 1;
+alias name R7;
+name = [[PTBR + 2 * ((userSP - 2) / 512)] * 512 + ((userSP - 2) % 512)];
+alias currentPID R2;
+currentPID=[SYSTEM_STATUS_TABLE + 1];
+alias counter R3;
+counter=1;
+alias flag R4;
+flag=0;
+while(counter<60)do
+	if([INODE_TABLE + counter*16 + 1]==name) then
+		flag=counter;
+		break;
+	endif;
+	counter = counter + 1;
+endwhile;
+alias RetVal R5;
+RetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+if(flag==0) then
+	[RetVal] = -1;
+	ireturn;
+endif;
+multipush(R0,R1,R2,R3,R4,R5,R7);
+alias functionNum R1;
+functionNum = 3;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+call MOD_1;
+multipop(R0,R1,R2,R3,R4,R5,R7);
+alias userareapage R6;
+userareapage = [PROCESS_TABLE + currentPID * 16 + 11];
+[MEMORY_FREE_LIST + userareapage] = [MEMORY_FREE_LIST + userareapage] + 1;
+[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+SP = userareapage * 512 - 1;
+
+alias perprocess R6;
+perprocess = [PROCESS_TABLE + 16 + 11] + 512 - 16;
+counter = 0;
+while(counter < 8) do
+	[perprocess + 2 * counter] = -1;
+	counter = counter + 1;
+endwhile;
+[PROCESS_TABLE + currentPID * 16 + 7] = flag;
+[PROCESS_TABLE + currentPID * 16 + 4] = RUNNING;
+
+multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+functionNum = 4;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+call MOD_1;
+
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+functionNum = 1;
+call MOD_2;
+[PTBR+16] = R0;
+[PTBR+17] = "0110";
+
+functionNum = 1;
+call MOD_2;
+[PTBR+18] = R0;
+[PTBR+19] = "0110";
+
+multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+
+alias blocknum R3;
+R1 = 5;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+blocknum = [INODE_TABLE + R4*16 +8];
+breakpoint;
+call MOD_2;
+[PTBR + 8] = R0;
+[PTBR + 9] = "0100";
+
+alias count R3;
+count = 1;
+while(count<4)do
+	[PTBR + 8 +count*2] = -1;
+	[PTBR + 9 +count*2] = "0000";
+	count = count + 1;
+endwhile;
+
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
+
+count = 2;
+while(count<10)do
+	[DISK_MAP_TABLE + currentPID * 10 + count] = -1;
+	count = count + 1;
+endwhile;
+
+count = 4;
+while(count<8)do
+	[DISK_MAP_TABLE + currentPID * 10 + count] = [INODE_TABLE + flag * 16 + count + 4];
+	count = count + 1;
+endwhile;
+
+[8 * 512] = [[PTBR + 8] * 512 + 1];
+breakpoint;
+SP = 8*512;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;

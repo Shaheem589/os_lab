@@ -1,0 +1,41 @@
+alias functionnum R1;
+alias currentPID R2;
+alias counter R4;
+if(functionnum == 1)then
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+	while([SYSTEM_STATUS_TABLE + 2] == 0) do
+		[PROCESS_TABLE + currentPID * 16 + 4] = WAIT_MEM;
+		multipush(R1,R2,R3);
+		R1 = 9;
+		R2 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R1,R2,R3);
+	endwhile;
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	counter = 76;
+	while(counter < 128) do
+		if([MEMORY_FREE_LIST + counter] == 0) then
+			R0 = counter;
+			[MEMORY_FREE_LIST + counter]=1;
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;
+if(functionnum == 2) then
+	alias currentpage R3;	
+	[MEMORY_FREE_LIST + currentpage] = [MEMORY_FREE_LIST + currentpage] - 1;
+	if([MEMORY_FREE_LIST + currentpage] == 0)then
+		[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	endif;
+	counter = 0;
+	while(counter < 16)do
+		if([PROCESS_TABLE + counter * 16 + 4] == WAIT_MEM) then
+			[PROCESS_TABLE + counter * 16 + 4] = READY;
+		endif;
+		counter = counter + 1;
+	endwhile;
+endif;
+return;

@@ -1,0 +1,15 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13] = userSP;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11] * 512 - 1;
+backup;
+[TERMINAL_STATUS_TABLE] = 0;
+alias reqPID R1;
+reqPID = [TERMINAL_STATUS_TABLE + 1];
+[PROCESS_TABLE + reqPID * 16 + 8] = P0;
+R1 = 9;
+R2 = [SYSTEM_STATUS_TABLE + 1];
+call MOD_0;
+restore;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE] * 16 + 13];
+ireturn;
