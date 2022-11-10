@@ -1,0 +1,17 @@
+breakpoint;
+alias process_table_entry R0;
+alias functionnum R1;
+alias currentPID R2;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+[PROCESS_TABLE + currentPID * 16 + 9] = 10;
+process_table_entry = PROCESS_TABLE + currentPID * 16;
+[process_table_entry + 13] = SP;
+if(currentPID ==0)then
+	print([498]);
+	print([499]);
+	print([500]);
+endif;
+SP = [process_table_entry + 11] * 512 - 1;
+functionnum = 3;
+call MOD_1;
+call MOD_5;
