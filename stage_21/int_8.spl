@@ -1,0 +1,129 @@
+
+alias currentPID R2;
+alias functionNum R1;
+alias userSP R3;
+alias childPID R4;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+[PROCESS_TABLE + currentPID * 16 + 9] = 8;
+userSP = SP;
+[PROCESS_TABLE + currentPID * 16 + 13] = SP;
+SP = [PROCESS_TABLE + currentPID * 16 + 11] * 512 - 1;
+multipush(R2,R3);
+functionNum = 1;
+call MOD_1;
+if(R0 == -1)then
+	multipush(R0);
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+	SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+	ireturn;
+else
+	childPID = R0;
+endif;
+multipop(R2,R3);
+alias ptbr R6;
+ptbr = [PROCESS_TABLE + childPID * 16 + 14];
+multipush(R2,R3,R4);
+if( [ptbr + 4] == -1 ) then
+	R1 = 1;
+	call MOD_2;
+	[ptbr + 4] = R0;
+	[ptbr + 5] = "1110";
+	R1 = 1;
+	call MOD_2;
+	[ptbr + 6] = R0;
+	[ptbr + 7] = "1110";
+endif;
+multipop(R2,R3,R4);
+ptbr = [PROCESS_TABLE + childPID * 16 + 14] ;
+multipush(R2,R3,R4);
+R1 = 1;
+R2 = childPID;
+call MOD_2;
+[ptbr + 16] = R0;
+[ptbr + 17] = "0110";
+
+R1 = 1;
+R2 = childPID;
+call MOD_2;
+[ptbr + 18] = R0;
+[ptbr + 19] = "0110";
+
+R1 = 1;
+R2 = childPID;
+call MOD_2;
+multipop(R2,R3,R4);
+[PROCESS_TABLE + childPID * 16 + 11] = R0;
+
+[PROCESS_TABLE + childPID * 16 + 3] = [PROCESS_TABLE + currentPID * 16 + 3];
+[PROCESS_TABLE + childPID * 16 + 6] = [PROCESS_TABLE + currentPID * 16 + 6];
+[PROCESS_TABLE + childPID * 16 + 7] = [PROCESS_TABLE + currentPID * 16 + 7];
+[PROCESS_TABLE + childPID * 16 + 10] = [PROCESS_TABLE + currentPID * 16 + 10];
+[PROCESS_TABLE + childPID * 16 + 13] = [PROCESS_TABLE + currentPID * 16 + 13];
+
+[PROCESS_TABLE + childPID * 16] = 0;
+[PROCESS_TABLE + childPID * 16 + 9] = 0;
+[PROCESS_TABLE + childPID * 16 + 12] = 0;
+
+[PROCESS_TABLE + childPID * 16 + 2] = [PROCESS_TABLE + currentPID * 16 + 1];
+[PROCESS_TABLE + childPID * 16 + 4] = CREATED;
+
+alias counter R5;
+counter = 2;
+while(counter<10) do
+	[DISK_MAP_TABLE + childPID * 10 + counter] = [DISK_MAP_TABLE + currentPID * 10 + counter];
+	counter = counter + 1;
+endwhile;
+alias resourcetable_p R6;
+alias resourcetable_c R7;
+resourcetable_p = [PROCESS_TABLE + 16 * currentPID + 11] * 512 + 512 - 16;
+resourcetable_c = [PROCESS_TABLE + 16 * childPID + 11] * 512 + 512 - 16;
+counter = 0;
+while(counter < 16) do
+	[resourcetable_c + counter] = [resourcetable_p + counter];
+	counter = counter + 1;
+endwhile;
+alias ptbr_p R6;
+alias ptbr_c R7;
+ptbr_c = [PROCESS_TABLE + childPID * 16 + 14];
+ptbr_p = [PROCESS_TABLE + currentPID * 16 + 14];
+
+counter = 0;
+while(counter < 8) do
+	[ptbr_c + 2 * counter] = [ptbr_p + 2 * counter];
+	[ptbr_c + 2 * counter + 1] = [ptbr_p + 2 * counter + 1];
+	[MEMORY_FREE_LIST + [ptbr_c + 2 * counter]] = [MEMORY_FREE_LIST + [ptbr_c + 2 * counter]] + 1; 
+	counter = counter + 1;
+endwhile;
+alias stack_p R6;
+alias stack_c R7;
+stack_p = [[PROCESS_TABLE + currentPID * 16 + 14] + 16] * 512;
+stack_c = [[PROCESS_TABLE + childPID * 16 + 14] + 16] * 512;
+counter = 0;
+while(counter < 512) do
+	[stack_c + counter] = [stack_p + counter];
+	counter = counter + 1;
+endwhile;
+stack_p = [[PROCESS_TABLE + currentPID * 16 + 14] + 18] * 512;
+stack_c = [[PROCESS_TABLE + childPID * 16 + 14] + 18] * 512;
+counter = 0;
+while(counter < 512) do
+	[stack_c + counter] = [stack_p + counter];
+	counter = counter + 1;
+endwhile;
+alias kernel R6;
+kernel = [PROCESS_TABLE + childPID * 16 + 11] * 512 + [PROCESS_TABLE + childPID * 16 + 12];
+[kernel] = BP;
+alias br R6;
+br = [PROCESS_TABLE + currentPID * 16 + 14];
+userSP = [PROCESS_TABLE + currentPID * 16 + 13];
+alias physicalAddrRetVal R5;     
+physicalAddrRetVal = ([br + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);     
+[physicalAddrRetVal] = [PROCESS_TABLE + childPID * 16 + 1];
+br = [PROCESS_TABLE + childPID * 16 + 14];
+userSP = [PROCESS_TABLE + childPID * 16 + 13];     
+physicalAddrRetVal = ([br + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);     
+[physicalAddrRetVal] = 0;
+[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+SP = userSP;
+breakpoint;
+ireturn;
