@@ -1,0 +1,22 @@
+
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+backup;
+alias currentPID R0;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+alias process_table_entry R1;
+process_table_entry = PROCESS_TABLE + currentPID*16;
+[process_table_entry + 4] = READY;
+alias i R2;
+i=0;
+while(i<16) do 
+	[PROCESS_TABLE + 16*i] = [PROCESS_TABLE + 16*i] + 1;
+	i=i+1;
+endwhile;
+call MOD_5;
+restore;
+alias newPID R4;
+newPID = [SYSTEM_STATUS_TABLE + 1];
+SP = [PROCESS_TABLE + newPID*16 +13];
+[PROCESS_TABLE + newPID*16 +9] = 0;
+ireturn;

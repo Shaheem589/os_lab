@@ -1,0 +1,23 @@
+alias currentPID R0;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+alias process_table_entry R1;
+process_table_entry = PROCESS_TABLE + currentPID * 16;
+alias i R2;
+i=1;
+alias flag R3;
+flag=0;
+[PROCESS_TABLE + 16*currentPID + 4]=TERMINATED;
+breakpoint;
+while(i<16) do
+	if([PROCESS_TABLE + 16*i + 4]!=TERMINATED) then
+		flag=1;
+		break;
+	endif;
+	i=i+1;
+endwhile;
+if(flag==0) then
+	halt;
+else
+	call MOD_5;
+endif;
+
