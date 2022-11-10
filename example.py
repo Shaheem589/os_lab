@@ -1,2 +1,2 @@
 for i in range(10):
-	print("My name is Mohammed Shaheem")
+	print(f"{i+1}. My name is Mohammed Shaheem")
