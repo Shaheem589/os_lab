@@ -1,0 +1,33 @@
+int main()
+{
+decl
+	str name,output;
+    int temp,filedes,wtemp;
+enddecl
+	begin	
+		while(1==1)do
+			breakpoint;
+			temp = exposcall("Write",-2,"COMMAND:");
+			temp = exposcall("Read",-1,name);
+			if(name=="shutdown") then
+				temp = exposcall("Shutdown");
+				break;
+			else
+				filedes= exposcall("Open",name);
+				if(filedes < 0)then
+					temp = exposcall("Write",-2,"OP Fail");
+					break;
+				else
+					output = "Output:";
+					while(temp==0 AND output != "0" ) do
+						wtemp=exposcall("Write",-2,output);
+						temp=exposcall("Read",filedes,output);
+					endwhile;
+    				temp=exposcall("Close",filedes);
+				endif;
+			endif;
+		endwhile;
+		return 0;
+	end
+}
+

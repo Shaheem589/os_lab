@@ -1,0 +1,78 @@
+alias userSP R6;
+userSP = SP;
+alias functionNum R1;
+functionNum = [[PTBR + 2 * ((userSP - 5) / 512)] * 512 + (userSP - 5) % 512];
+alias currentPID R2;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+[PROCESS_TABLE + currentPID * 16 + 13] = SP;
+SP = [PROCESS_TABLE + currentPID * 16 + 11] * 512 -1;
+alias retval R3;
+retval = ([PTBR + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512);
+alias filename R4;
+filename = [[PTBR + 2 * ((userSP - 4) / 512)] * 512 + (userSP - 4) % 512];
+alias resourcetable R5;
+resourcetable = [PROCESS_TABLE + currentPID * 16 + 11] * 512 + 496;
+alias counter R7;
+alias flag R8;
+if(functionNum==2)then
+	[PROCESS_TABLE + currentPID * 16 + 9] = 2;
+	counter = 0;
+	flag=-1;
+	while(counter<8)do
+		if([resourcetable + counter*2] == -1)then
+			flag=counter;
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	if(flag==-1)then
+		[retval] = -3;
+		SP = userSP;
+		[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+		ireturn;
+	endif;
+	multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+	R1=3;
+	R3=filename;
+	call MOD_3;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+	if(R0==-1 || R0==-2)then
+		[retval] = R0;
+		SP = userSP;
+		[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+		ireturn;
+	endif;
+	[resourcetable + flag * 2] = FILE;
+	[resourcetable + flag * 2 + 1] = R0;
+	[retval] = flag;
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;
+endif;
+if(functionNum == 3)then
+ 	[PROCESS_TABLE + currentPID * 16 + 9] = 3;
+ 	alias filedescriptor R4;
+ 	if(filedescriptor<0 || filedescriptor>8) then
+ 		[retval] = -1;
+		SP = userSP;
+		[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+		ireturn; 
+	endif;
+ 	if([resourcetable + filedescriptor*2] != FILE)then
+ 		[retval] = -1;
+		SP = userSP;
+		[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+		ireturn;
+	endif;
+	multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+	R1=4;
+	R3=[resourcetable + filedescriptor*2 + 1];
+	call MOD_3;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+	[resourcetable + filedescriptor * 2] = -1;
+	[resourcetable + filedescriptor * 2 + 1] = -1;
+	[retval] = 0;
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;
+endif;

@@ -1,0 +1,120 @@
+alias functionNum R1;
+alias currentPID R2;
+alias counter R7;
+alias flag R6; 
+alias flag2 R8; 
+if(functionNum == 2)then
+	alias disk R3;
+	alias offset R4;
+	alias memory R5;
+	alias buffer R8;
+	buffer = disk%4;
+	multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+	R1 = 1;
+	R3 = buffer;
+	call MOD_0;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+	if([BUFFER_TABLE + 4 * buffer]!= disk ||[BUFFER_TABLE + 4 * buffer]==-1)then
+		if([BUFFER_TABLE + 4 * buffer + 1] == 1)then
+			multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+			R1 = 1;
+			R3 = 70 + disk % 4;
+			R4 = [BUFFER_TABLE + 4 * buffer];
+			call MOD_4;
+			multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+			[BUFFER_TABLE + 4* buffer + 1]=0;
+		endif;
+		multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+		R1 = 2;
+		R4 = disk;
+		R3 = 70 + (disk % 4);
+		call MOD_4;
+		multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+		[BUFFER_TABLE + 4 * buffer] = disk;
+	endif;
+	[memory]=[(70+(disk % 4)) * 512 + offset];
+	multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+	R1 = 2;
+	R3 = buffer;
+	call MOD_0;
+	multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+	return;
+endif;
+if(functionNum == 3)then
+	alias filename R3;
+	counter = 0;
+	flag = -1;
+	while(counter<60)do
+		if([INODE_TABLE + 16*counter + 1]==filename)then
+			flag=counter;
+			break;
+		endif;
+		counter= counter + 1;
+	endwhile;
+	if(flag ==-1 || [INODE_TABLE + 16 * counter]==EXEC )then
+		R0 = -1;
+		return;
+	endif;
+	multipush(R1,R2,R3,R6,R7);
+	R1 = 4;
+	R3 = flag;
+	call MOD_0;
+	multipop(R1,R2,R3,R6,R7);
+	if(R0==-1)then
+		return;
+	endif;
+	counter = 0;
+	flag2=-1;
+	while(counter<32)do
+		if([OPEN_FILE_TABLE + 4* counter]==-1)then
+			flag2=counter;
+			break;
+		endif;
+		counter=counter + 1;
+	endwhile;
+	if(flag2==-1)then
+		multipush(R1,R2,R3,R6,R7,R8);
+		R1 = 5;
+		R3 = flag2;
+		call MOD_0;
+		multipop(R1,R2,R3,R6,R7,R8);
+		R0 = -2;
+		return;
+	endif;
+	if(filename == "root")then
+		[OPEN_FILE_TABLE + 4*flag2]=INODE_ROOT;
+	else
+		if([FILE_STATUS_TABLE + 4 * flag + 1] == -1)then
+			[FILE_STATUS_TABLE+ 4*flag + 1] = 1;
+		else
+			[FILE_STATUS_TABLE+ 4*flag + 1] = [FILE_STATUS_TABLE+ 4*flag + 1] + 1;
+		endif;
+		[OPEN_FILE_TABLE + 4*flag2]=flag;
+	endif;
+	[OPEN_FILE_TABLE + 4*flag2 + 1] = 1;
+	[OPEN_FILE_TABLE + 4*flag2 + 2] = 0;
+	multipush(R1,R2,R3,R6,R7,R8);
+	R1 = 5;
+	R3 = flag2;
+	call MOD_0;
+	multipop(R1,R2,R3,R6,R7,R8);
+	R0 = flag2;
+	return;	
+endif;
+if(functionNum == 4)then
+	alias fileindex R3;
+	alias inodeindex R4;
+	inodeindex = [OPEN_FILE_TABLE + 4 * fileindex];
+	[OPEN_FILE_TABLE + 4*fileindex + 1] = [OPEN_FILE_TABLE + 4*fileindex + 1] - 1;
+	if([OPEN_FILE_TABLE + 4*fileindex + 1]==0)then
+		[OPEN_FILE_TABLE + 4*fileindex] = -1;
+		[OPEN_FILE_TABLE + 4*fileindex + 2] = -1;
+		if([INODE_TABLE + 16 * inodeindex + 1]!="root")then
+			[FILE_STATUS_TABLE + 4*inodeindex +1] = [FILE_STATUS_TABLE + 4*inodeindex +1] - 1;
+			if([FILE_STATUS_TABLE + 4*inodeindex +1]==0)then
+				[FILE_STATUS_TABLE + 4*inodeindex +1]=-1;
+			endif;
+		endif;
+	endif;
+	return;
+endif;
