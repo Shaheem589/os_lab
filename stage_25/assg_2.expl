@@ -1,0 +1,32 @@
+int main()
+{
+decl
+	str name,output;
+    int stemp,temp, permission,counter,filedes;
+enddecl
+
+begin
+	temp=exposcall("Read",-1,name);
+	filedes=exposcall("Open",name);
+	temp = exposcall("Seek",filedes,1100);
+    counter = 2000;
+	while(counter <= 2513)do
+		temp = exposcall("Write",filedes,counter);
+		counter = counter + 1;
+    endwhile;
+    stemp = 0;
+    counter = 1;
+    output="Output:";
+    while(stemp!=-2)do
+    	temp = exposcall("Read",filedes,output);
+    	temp = exposcall("Write",-2,output);
+		stemp = exposcall("Seek",filedes,-2);
+    	counter = counter + 1;
+    endwhile;
+    temp=exposcall("Close",filedes);
+    temp=exposcall("Delete",name);
+    temp=exposcall("Shutdown");
+    return 0;
+end
+}
+

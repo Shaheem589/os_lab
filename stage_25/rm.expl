@@ -1,0 +1,11 @@
+int main()
+{
+decl
+	str filename;
+enddecl
+	temp=exposcall("Read",-1,filename);
+begin	
+    return 0;
+end
+}
+

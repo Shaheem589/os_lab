@@ -1,0 +1,18 @@
+int main()
+{
+decl
+	int stemp,temp,fdes;
+	str output;
+enddecl
+begin		
+	fdes=exposcall("Open","root");
+	stemp=0;
+	while(stemp==0)do
+    	temp = exposcall("Read",fdes,output);
+    	temp = exposcall("Write",-2,output);
+		stemp = exposcall("Seek",fdes,4);
+	endwhile;
+    return 0;
+end
+}
+
