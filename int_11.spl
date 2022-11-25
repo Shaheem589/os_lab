@@ -1,0 +1,59 @@
+alias userSP R0;
+userSP = SP;
+alias functionNum R1;
+functionNum = [[PTBR + 2 * ((userSP - 5) / 512)] * 512 + (userSP - 5) % 512];
+alias currentPID R2;
+currentPID = [SYSTEM_STATUS_TABLE + 1];
+[PROCESS_TABLE + currentPID * 16 + 13] = SP;
+SP = [PROCESS_TABLE + currentPID * 16 + 11] * 512 -1;
+alias retval R3;
+retval = ([PTBR + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512);
+if(functionNum == 11)then
+	[PROCESS_TABLE + currentPID * 16 + 9] = 11;
+	[retval] = currentPID;
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;
+endif;
+if(functionNum == 12)then
+	[PROCESS_TABLE + currentPID * 16 + 9] = 12;
+	[retval] = [SYSTEM_STATUS_TABLE + currentPID * 16 + 2];
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;
+endif;
+if(functionNum == 13)then
+	[PROCESS_TABLE + currentPID * 16 + 9] = 13;
+	alias WAIT_PID R4;
+	WAIT_PID = [[PTBR + 2 * ((userSP - 4) / 512)] * 512 + (userSP - 4) % 512];
+	if(WAIT_PID > 15 || WAIT_PID < 1 || [PROCESS_TABLE + WAIT_PID * 16 + 4] == TERMINATED || WAIT_PID == currentPID)then
+		[retval] = -1;
+		SP = userSP;
+		[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+		ireturn;
+	endif;
+	[PROCESS_TABLE + currentPID * 16 + 4] = WAIT_PROCESS;
+	[PROCESS_TABLE + currentPID * 16 + 5] = WAIT_PID;
+	multipush(R0,R1,R2,R3,R4);
+	call MOD_5;
+	multipop(R0,R1,R2,R3,R4);
+	[retval] = 0;
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;
+endif;
+if(functionNum == 14)then
+	[PROCESS_TABLE + currentPID * 16 + 9] = 14;
+	alias counter R4;	
+	counter = 1;
+	while(counter < 16)do
+		if([SYSTEM_STATUS_TABLE + counter * 16 + 4]==WAIT_PROCESS && [SYSTEM_STATUS_TABLE + counter * 16 + 5]==currentPID) then
+			[SYSTEM_STATUS_TABLE + counter * 16 + 4] = READY;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	[retval] = 0;
+	SP = userSP;
+	[PROCESS_TABLE + currentPID * 16 + 9] = 0;
+	ireturn;		
+endif;
