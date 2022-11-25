@@ -1,0 +1,79 @@
+alias functionnum R1;
+alias currentPID R2;
+alias blocknum R3;
+alias counter R4;
+alias counter2 R5;
+alias flag R6;
+	
+if(functionnum == 1)then
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+	while([SYSTEM_STATUS_TABLE + 2] == 0) do
+		[PROCESS_TABLE + currentPID * 16 + 4] = WAIT_MEM;
+		multipush(R1,R2,R3);
+		R1 = 9;
+		R2 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R1,R2,R3);
+	endwhile;
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	if([SYSTEM_STATUS_TABLE + 2] < [498])then
+		[498] = [SYSTEM_STATUS_TABLE + 2];
+	endif; 
+	counter = 76;
+	while(counter < 128) do
+		if([MEMORY_FREE_LIST + counter] == 0) then
+			R0 = counter;
+			[MEMORY_FREE_LIST + counter] = 1;
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;
+if(functionnum == 2) then
+	alias currentpage R3;	
+	[MEMORY_FREE_LIST + currentpage] = [MEMORY_FREE_LIST + currentpage] - 1;
+	if([MEMORY_FREE_LIST + currentpage] == 0)then
+		[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	endif;
+	counter = 0;
+	while(counter < 16)do
+		if([PROCESS_TABLE + counter * 16 + 4] == WAIT_MEM) then
+			[PROCESS_TABLE + counter * 16 + 4] = READY;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;
+if(functionnum == 4) then
+	[DISK_FREE_LIST + blocknum] = 0;
+	return;
+endif;
+if(functionnum == 5) then
+	counter = 0;
+	while(counter < 16) do
+		counter2 = 4;
+		while(counter2 < 8) do
+			if([DISK_MAP_TABLE + counter * 10 + counter2] == blocknum && [PAGE_TABLE_BASE + counter*20 + counter2*2 ]!=-1) then
+				[MEMORY_FREE_LIST + [PAGE_TABLE_BASE + counter*20 + counter2*2]] = [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + counter*20 + counter2*2]] + 1; 
+				R0 = [PAGE_TABLE_BASE + counter*20 + counter2*2];
+				flag=1;
+				return;
+			endif;
+			counter2 = counter2 + 1;
+		endwhile;
+		counter = counter + 1;
+	endwhile;
+	multipush(R1,R2,R3,R4,R5);
+	R1 = 1;
+	call MOD_2;
+	R1 = 2;
+	R2 = [SYSTEM_STATUS_TABLE + 1];
+	R4 = R3;
+	R3 = R0;
+	call MOD_4;
+	R0 = R3;
+	multipop(R1,R2,R3,R4,R5); 
+endif;
+return;
